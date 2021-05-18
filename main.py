@@ -14,19 +14,28 @@ while run:
 
     draw_background()
 
+    health_bar.draw(player.health)
     player.update()
     player.draw()
 
-    enemy.update()
-    enemy.draw()
+    for enemy in enemy_group:
+        enemy.ai()
+        enemy.update()
+        enemy.draw()
 
     rock_groupe.update()
+    projectile_groupe.update()
     rock_groupe.draw(screen)
+    projectile_groupe.draw(screen)
 
     # Update action joueur
     if player.alive:
         if shoot:
             player.shoot()
+        elif projectile and projectile_thrown is False:
+            projectile = Projectile(player.rect.centerx + (0.75 * player.rect.size[0] * player.direction), player.rect.top, player.direction)
+            projectile_groupe.add(projectile)
+            projectile_thrown = True
         if player.in_air:
             player.update_action(2)  # 2 = jump
         elif moving_left or moving_right:
@@ -51,6 +60,9 @@ while run:
                 player.jump = True
             if event.key == pygame.K_ESCAPE:
                 run = False
+            if event.key == pygame.K_a:
+                projectile = True
+
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_q:
                 moving_left = False
@@ -58,6 +70,9 @@ while run:
                 moving_right = False
             if event.key == pygame.K_SPACE:
                 shoot = False
+            if event.key == pygame.K_a:
+                projectile = False
+                projectile_thrown = False
 
     pygame.display.update()
 
