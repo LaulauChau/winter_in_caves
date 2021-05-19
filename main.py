@@ -13,7 +13,7 @@ while run:
     clock.tick(FPS)
 
     draw_background()
-
+    world.draw()
     health_bar.draw(player.health)
     player.update()
     player.draw()
@@ -24,9 +24,13 @@ while run:
         enemy.draw()
 
     rock_groupe.update()
-    projectile_groupe.update()
     rock_groupe.draw(screen)
+    projectile_groupe.update()
     projectile_groupe.draw(screen)
+    water_group.update()
+    water_group.draw(screen)
+    exit_group.update()
+    exit_group.draw(screen)
 
     # Update action joueur
     if player.alive:

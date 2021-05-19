@@ -1,6 +1,7 @@
 import pygame
 import os
 import random
+import csv
 
 # Initialise pygame
 pygame.init()
@@ -19,7 +20,11 @@ FPS = 60
 
 # Variable de jeu
 GRAVITY = 0.75
-TILE_SIZE = 40
+ROWS = 16
+COLS = 150
+TILE_SIZE = SCREEN_HEIGHT // ROWS
+TILE_TYPES = len(os.listdir('img/tile'))
+level = 1
 
 # Variable d'action du personnages
 moving_left = False
@@ -29,6 +34,12 @@ projectile = False
 projectile_thrown = False
 
 # Charge les sprites
+img_list = []
+for x in range(TILE_TYPES):
+    img = pygame.image.load(f'img/tile/{x}.png')
+    img = pygame.transform.scale(img, (TILE_SIZE, TILE_SIZE))
+    img_list.append(img)
+
 rock_img = pygame.image.load('img/items/0.png').convert_alpha()
 rock_img = pygame.transform.scale(rock_img, (int(rock_img.get_width() * 1.5), int(rock_img.get_height() * 1.5)))
 
@@ -39,6 +50,8 @@ projectile_img = pygame.transform.scale(projectile_img, (int(projectile_img.get_
 rock_groupe = pygame.sprite.Group()
 projectile_groupe = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
+water_group = pygame.sprite.Group()
+exit_group = pygame.sprite.Group()
 
 
 # Couleurs

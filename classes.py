@@ -42,6 +42,8 @@ class Character(pygame.sprite.Sprite):
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
 
     def update(self):
         self.update_animation()
@@ -72,10 +74,20 @@ class Character(pygame.sprite.Sprite):
         if self.vel_y > 10:
             self.vel_y = 10
         dy += self.vel_y
-        # Verifie collision avec le sol
-        if self.rect.bottom + dy > 900:
-            dy = 900 - self.rect.bottom
-            self.in_air = False
+
+        for tile in world.obstacle_list:
+            if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                dx = 0
+
+            if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                if self.vel_y < 0:
+                    self.vel_y = 0
+                    dy = tile[1].bottom - self.rect.top
+                elif self.vel_y >= 0:
+                    self.vel_y = 0
+                    self.in_air = False
+                    dy = tile[1].top - self.rect.bottom
+
         # Update hitbox
         self.rect.x += dx
         self.rect.y += dy
@@ -115,7 +127,7 @@ class Character(pygame.sprite.Sprite):
                         self.move_counter *= -1
                 else:
                     self.idling_counter -= 1
-                    if self.idling_counter == 0:
+                    if self.idling_counter <= 0:
                         self.idling = False
 
     def update_animation(self):
@@ -151,6 +163,42 @@ class Character(pygame.sprite.Sprite):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
 
+class World():
+    def __init__(self):
+        self.obstacle_list = []
+
+    def process_data(self, data):
+        for y, row in enumerate(data):
+            for x, tile in enumerate(row):
+                if tile >= 0:
+                    img = img_list[tile]
+                    img_rect = img.get_rect()
+                    img_rect.x = x * TILE_SIZE
+                    img_rect.y = y * TILE_SIZE
+                    tile_data = (img, img_rect)
+
+                    if tile >= 0 and tile <= 15:
+                        self.obstacle_list.append(tile_data)
+                    elif tile >= 16 and tile <= 17:
+                        water = Water(img, x * TILE_SIZE, y *TILE_SIZE)
+                        water_group.add(water)
+                    elif tile == 18:
+                        player = Character('player', x * TILE_SIZE, y * TILE_SIZE, 0.2, 5)
+                        health_bar = HealthBar(10, 10, player.health, player.health)
+                    elif tile == 19:
+                        enemy = Character('enemy', x * TILE_SIZE, y * TILE_SIZE, 0.2, 5)
+                        enemy_group.add(enemy)
+                    elif tile == 20:
+                        exit = Exit(img, x * TILE_SIZE, y * TILE_SIZE)
+                        exit_group.add(exit)
+
+        return player, health_bar
+
+    def draw(self):
+        for tile in self.obstacle_list:
+            screen.blit(tile[0], tile[1])
+
+
 class HealthBar():
     def __init__(self, x, y, health, max_health):
         self.x = x
@@ -166,13 +214,20 @@ class HealthBar():
         pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20))
 
 
-# Initialise les classes
-player = Character('player', 200, 200, 0.3, 5)
-health_bar = HealthBar(10, 10, player.health, player.health)
-enemy_1 = Character('enemy', 600, 800, 0.3, 2.5)
-enemy_2 = Character('enemy', 800, 800, 0.3, 2.5)
-enemy_group.add(enemy_1)
-enemy_group.add(enemy_2)
+class Water(pygame.sprite.Sprite):
+    def __init__(self, img, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
+
+
+class Exit(pygame.sprite.Sprite):
+    def __init__(self, img, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
 
 # Structures pierre (projectile)
@@ -245,4 +300,16 @@ class Projectile(pygame.sprite.Sprite):
             self.kill()
 
 
+world_data = []
+for row in range(ROWS):
+    r = [-1] * COLS
+    world_data.append(r)
 
+with open(f'level{level}_data.csv', newline='') as csvfile:
+    reader = csv.reader(csvfile, delimiter=',')
+    for x, row in enumerate(reader):
+        for y, tile in enumerate(row):
+            world_data[x][y] = int(tile)
+
+world = World()
+player, health_bar = world.process_data(world_data)
