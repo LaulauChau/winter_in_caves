@@ -57,7 +57,6 @@ while run:
             player.update_action(0)  # 0 = idle
 
         screen_scroll = player.move(moving_left, moving_right)
-        print(screen_scroll)
         bg_scroll -= screen_scroll
 
     for event in pygame.event.get():
