@@ -4,7 +4,16 @@ from classes import *
 # Remplis le fond d'ecran
 def draw_background():
     screen.fill(BACKGROUND)
-    pygame.draw.line(screen, RED, (0, 900), (SCREEN_WIDTH, 900))
+    width = sky.get_width()
+    for x in range(8):
+        # screen.blit(background, ((x * width) - scroll, 0))
+        screen.blit(sky, ((x * width) - bg_scroll * 0.5, 0))
+        screen.blit(rocks, ((x * width) - bg_scroll * 0.55, 0))
+        screen.blit(clouds_1, ((x * width) - bg_scroll * 0.60, 0))
+        screen.blit(clouds_2, ((x * width) - bg_scroll * 0.65, 0))
+        screen.blit(ground_1, ((x * width) - bg_scroll * 0.70, 0))
+        screen.blit(ground_2, ((x * width) - bg_scroll * 0.75, 0))
+        screen.blit(ground_3, ((x * width) - bg_scroll * 0.8, 0))
 
 
 # Boucle de jeu
@@ -46,7 +55,10 @@ while run:
             player.update_action(1)  # 1 = run
         else:
             player.update_action(0)  # 0 = idle
-        player.move(moving_left, moving_right)
+
+        screen_scroll = player.move(moving_left, moving_right)
+        print(screen_scroll)
+        bg_scroll -= screen_scroll
 
     for event in pygame.event.get():
         # Quitter le jeu

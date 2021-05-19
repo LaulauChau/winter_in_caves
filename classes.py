@@ -54,6 +54,7 @@ class Character(pygame.sprite.Sprite):
 
     def move(self, move_left, move_right):
         # Reset variable mouvement
+        sc_scroll = 0
         dx = 0
         dy = 0
         # Affecte les variables en fonction de l'action
@@ -79,6 +80,10 @@ class Character(pygame.sprite.Sprite):
             if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
 
+                if self.char_type == 'enemy':
+                    self.direction *= -1
+                    self.move_counter = 0
+
             if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                 if self.vel_y < 0:
                     self.vel_y = 0
@@ -88,9 +93,22 @@ class Character(pygame.sprite.Sprite):
                     self.in_air = False
                     dy = tile[1].top - self.rect.bottom
 
+        if self.char_type == 'player':
+            if self.rect.left + dx < 0 or self.rect.right + dx > SCREEN_WIDTH:
+                dx = 0
+
         # Update hitbox
         self.rect.x += dx
         self.rect.y += dy
+
+        if self.char_type == 'player':
+            if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (
+                    world.level_length * TILE_SIZE) - SCREEN_WIDTH) \
+                    or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
+                self.rect.x -= dx
+                sc_scroll = -dx
+
+        return sc_scroll
 
     def shoot(self):
         if self.shoot_cooldown == 0:
@@ -114,6 +132,7 @@ class Character(pygame.sprite.Sprite):
                         ai_moving_right = True
                     else:
                         ai_moving_right = False
+
                     ai_moving_left = not ai_moving_right
                     self.move(ai_moving_left, ai_moving_right)
                     self.update_action(1) # 1: run
@@ -129,6 +148,8 @@ class Character(pygame.sprite.Sprite):
                     self.idling_counter -= 1
                     if self.idling_counter <= 0:
                         self.idling = False
+
+        self.rect.x += screen_scroll
 
     def update_animation(self):
         # Update animation
@@ -168,6 +189,8 @@ class World():
         self.obstacle_list = []
 
     def process_data(self, data):
+        self.level_length = len(data[0])
+
         for y, row in enumerate(data):
             for x, tile in enumerate(row):
                 if tile >= 0:
@@ -196,6 +219,7 @@ class World():
 
     def draw(self):
         for tile in self.obstacle_list:
+            tile[1][0] += screen_scroll
             screen.blit(tile[0], tile[1])
 
 
@@ -221,6 +245,9 @@ class Water(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
+    def update(self):
+        self.rect.x += screen_scroll
+
 
 class Exit(pygame.sprite.Sprite):
     def __init__(self, img, x, y):
@@ -228,6 +255,9 @@ class Exit(pygame.sprite.Sprite):
         self.image = img
         self.rect = self.image.get_rect()
         self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
+
+    def update(self):
+        self.rect.x += screen_scroll
 
 
 # Structures pierre (projectile)
@@ -242,7 +272,7 @@ class Rock(pygame.sprite.Sprite):
 
     def update(self):
         # bouger la pierre
-        self.rect.x += (self.direction * self.speed)
+        self.rect.x += (self.direction * self.speed) + screen_scroll
         # verifie si la pierre sort de l'ecran
         if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH:
             self.kill()
@@ -293,7 +323,7 @@ class Projectile(pygame.sprite.Sprite):
                     self.vel_y = 0
                     dy = tile[1].top - self.rect.bottom
 
-        self.rect.x += dx
+        self.rect.x += dx + screen_scroll
         self.rect.y += dy
 
         if pygame.sprite.spritecollide(player, projectile_groupe, False):
