@@ -218,7 +218,7 @@ class World():
     def __init__(self):
         self.obstacle_list = []
 
-    # Creer les donnes de jeu en fonction du fichier csw
+    # Creer les donnes de jeu en fonction du fichier csv
     def process_data(self, data):
         self.level_length = len(data[0])
         for y, row in enumerate(data):
@@ -389,6 +389,7 @@ class Ball(pygame.sprite.Sprite):
             self.kill()
 
 
+# Créer les transitions à l'écran
 class ScreenFade():
     def __init__(self, direction, colour, speed):
         self.direction = direction
@@ -420,6 +421,7 @@ class ScreenFade():
 intro_fade = ScreenFade(1, BLACK, 4)
 death_fade = ScreenFade(2, RED, 4)
 
+# Créer les boutons
 start_button = button.Button(
     SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT // 2 - 150, start_img, 1)
 exit_button = button.Button(SCREEN_WIDTH // 2 - 110,
@@ -427,6 +429,7 @@ exit_button = button.Button(SCREEN_WIDTH // 2 - 110,
 restart_button = button.Button(
     SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 50, restart_img, 2)
 
+# Charge les données d'un monde
 world_data = []
 for row in range(ROWS):
     r = [-1] * COLUMNS
@@ -439,12 +442,12 @@ with open(f'levels/level{level}_data.csv', newline='') as csvfile:
 world = World()
 player, health_bar = world.process_data(world_data)
 
-
+# Boucle de jeu
 run = True
 while run:
 
     clock.tick(FPS)
-
+    # Lancement du jeu
     if start_game == False:
         screen.fill(BACKGROUND)
         if start_button.draw(screen):
@@ -453,28 +456,29 @@ while run:
         if exit_button.draw(screen):
             run = False
     else:
+        # Dessine les elements a l'ecran
         draw_background()
         world.draw()
         health_bar.draw(player.health)
 
         player.update()
         player.draw()
-
+        # Update pour tous les ennemis en même temps
         for enemy in enemy_group:
             enemy.ai()
             enemy.update()
             enemy.draw()
-
+        # Update pour le reste des sprites
         rock_group.update()
         ball_group.update()
         water_group.update()
         exit_group.update()
-
+        # Dessine les sprites
         rock_group.draw(screen)
         ball_group.draw(screen)
         water_group.draw(screen)
         exit_group.draw(screen)
-
+        # Actions du joueur
         if player.alive:
             if shoot:
                 player.shoot()
@@ -489,17 +493,17 @@ while run:
                 player.update_action(1)  # 1: run
             else:
                 player.update_action(0)  # 0: idle
+            # Scroll l'ecran
             screen_scroll, level_complete = player.move(
                 moving_left, moving_right)
             bg_scroll -= screen_scroll
-
+            # Changement de niveau
             if level_complete:
                 start_intro = True
                 level += 1
                 bg_scroll = 0
                 world_data = reset_level()
                 if level <= MAX_LEVELS:
-                    # load in level data and create world
                     with open(f'levels/level{level}_data.csv', newline='') as csvfile:
                         reader = csv.reader(csvfile, delimiter=',')
                         for x, row in enumerate(reader):
@@ -508,8 +512,10 @@ while run:
                     world = World()
                     player, health_bar = world.process_data(world_data)
                 else:
+                    # Fin du jeu
                     start_game = False
         else:
+            # Si le joueur meurt
             screen_scroll = 0
             if death_fade.fade():
                 if restart_button.draw(screen):
@@ -517,7 +523,6 @@ while run:
                     start_intro = True
                     bg_scroll = 0
                     world_data = reset_level()
-                    # load in level data and create world
                     with open(f'levels/level{level}_data.csv', newline='') as csvfile:
                         reader = csv.reader(csvfile, delimiter=',')
                         for x, row in enumerate(reader):
@@ -526,9 +531,12 @@ while run:
                     world = World()
                     player, health_bar = world.process_data(world_data)
 
+    # Check les touches appuyés
     for event in pygame.event.get():
+        # Si on clique sur la croix
         if event.type == pygame.QUIT:
             run = False
+        # Touche pressée
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_q:
                 moving_left = True
@@ -542,7 +550,7 @@ while run:
                 player.jump = True
             if event.key == pygame.K_ESCAPE:
                 run = False
-
+        # Touche relachée
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_q:
                 moving_left = False
