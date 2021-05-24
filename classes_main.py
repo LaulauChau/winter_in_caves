@@ -141,7 +141,7 @@ class Character(pygame.sprite.Sprite):
     def shoot(self):
         if self.shoot_cooldown == 0:
             self.shoot_cooldown = 20
-            rock = Rock(self.rect.centerx + (0.6 *
+            rock = Rock(self.rect.centerx + (0.75 *
                                              self.rect.size[0] * self.direction), self.rect.centery, self.direction)
             rock_group.add(rock)
 
@@ -500,7 +500,7 @@ while run:
                 world_data = reset_level()
                 if level <= MAX_LEVELS:
                     # load in level data and create world
-                    with open(f'level{level}_data.csv', newline='') as csvfile:
+                    with open(f'levels/level{level}_data.csv', newline='') as csvfile:
                         reader = csv.reader(csvfile, delimiter=',')
                         for x, row in enumerate(reader):
                             for y, tile in enumerate(row):
@@ -518,7 +518,7 @@ while run:
                     bg_scroll = 0
                     world_data = reset_level()
                     # load in level data and create world
-                    with open(f'level{level}_data.csv', newline='') as csvfile:
+                    with open(f'levels/level{level}_data.csv', newline='') as csvfile:
                         reader = csv.reader(csvfile, delimiter=',')
                         for x, row in enumerate(reader):
                             for y, tile in enumerate(row):
